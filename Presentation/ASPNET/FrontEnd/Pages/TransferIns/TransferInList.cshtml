@@ -1,4 +1,5 @@
 ﻿@page
+@attribute [Authorize(Roles = "TransferIns")]
 @{
     ViewData["Title"] = "Transfer In List";
 }

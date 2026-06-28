@@ -1,4 +1,5 @@
 ﻿@page
+@attribute [Authorize(Roles = "SalesOrders")]
 @{
     ViewData["Title"] = "Sales Order PDF";
 }

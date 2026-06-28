@@ -92,8 +92,6 @@ public static class DI
                     return Task.CompletedTask;
                 }
 
-
-
             };
 
         });

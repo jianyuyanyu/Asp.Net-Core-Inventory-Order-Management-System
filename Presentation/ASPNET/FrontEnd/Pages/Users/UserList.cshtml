@@ -1,4 +1,5 @@
 ﻿@page
+@attribute [Authorize(Roles = "Users")]
 @{
     ViewData["Title"] = "User List";
 }
@@ -192,3 +193,4 @@
 @section scripts {
     <script src="~/FrontEnd/Pages/Users/UserList.cshtml.js"></script>
 }
+

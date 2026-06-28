@@ -51,6 +51,7 @@
 
                 if (response.data.code === 200) {
                     StorageManager.saveLoginResult(response.data);
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Login Successful',
@@ -90,3 +91,4 @@
 };
 
 Vue.createApp(App).mount('#app');
+

@@ -24,6 +24,7 @@
                 const response = await logout();
                 if (response.data.code === 200) {
                     StorageManager.clearStorage();
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Logout Successful',
@@ -63,4 +64,6 @@
 };
 
 Vue.createApp(App).mount('#app');
+
+
 

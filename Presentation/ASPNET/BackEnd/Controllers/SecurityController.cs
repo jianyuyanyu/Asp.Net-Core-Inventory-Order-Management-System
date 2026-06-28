@@ -5,6 +5,8 @@ using ASPNET.BackEnd.Common.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Infrastructure.SecurityManager.Tokens;
+using Microsoft.Extensions.Options;
 
 namespace ASPNET.BackEnd.Controllers;
 
@@ -13,9 +15,11 @@ namespace ASPNET.BackEnd.Controllers;
 public class SecurityController : BaseApiController
 {
     private readonly IConfiguration _configuration;
-    public SecurityController(ISender sender, IConfiguration configuration) : base(sender)
+    private readonly TokenSettings _tokenSettings;
+    public SecurityController(ISender sender, IConfiguration configuration, IOptions<TokenSettings> tokenSettings) : base(sender)
     {
         _configuration = configuration;
+        _tokenSettings = tokenSettings.Value;
     }
 
     [AllowAnonymous]
@@ -23,6 +27,18 @@ public class SecurityController : BaseApiController
     public async Task<ActionResult<ApiSuccessResult<LoginResult>>> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
         var response = await _sender.Send(request, cancellationToken);
+
+        // Set HttpOnly cookie for server-side page authorization
+        if (response?.Data?.AccessToken != null)
+        {
+            Response.Cookies.Append("accessToken", response.Data.AccessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddMinutes(_tokenSettings.ExpireInMinute)
+            });
+        }
 
         return Ok(new ApiSuccessResult<LoginResult>
         {
@@ -37,6 +53,15 @@ public class SecurityController : BaseApiController
     public async Task<ActionResult<ApiSuccessResult<LogoutResult>>> LogoutAsync(LogoutRequest request, CancellationToken cancellationToken)
     {
         var response = await _sender.Send(request, cancellationToken);
+
+        // Clear HttpOnly cookie on logout
+        Response.Cookies.Append("accessToken", "", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTime.UtcNow.AddDays(-1)
+        });
 
         return Ok(new ApiSuccessResult<LogoutResult>
         {
@@ -124,6 +149,18 @@ public class SecurityController : BaseApiController
     public async Task<ActionResult<ApiSuccessResult<RefreshTokenResult>>> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
     {
         var response = await _sender.Send(request, cancellationToken);
+
+        // Update HttpOnly cookie with new access token
+        if (response?.Data?.AccessToken != null)
+        {
+            Response.Cookies.Append("accessToken", response.Data.AccessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddMinutes(_tokenSettings.ExpireInMinute)
+            });
+        }
 
         return Ok(new ApiSuccessResult<RefreshTokenResult>
         {
@@ -222,7 +259,7 @@ public class SecurityController : BaseApiController
     }
 
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpGet("GetUserList")]
     public async Task<ActionResult<ApiSuccessResult<GetUserListResult>>> GetUserListAsync(
         CancellationToken cancellationToken
@@ -239,7 +276,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("CreateUser")]
     public async Task<ActionResult<ApiSuccessResult<CreateUserResult>>> CreateUserAsync(
         CreateUserRequest request,
@@ -257,7 +294,7 @@ public class SecurityController : BaseApiController
     }
 
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("UpdateUser")]
     public async Task<ActionResult<ApiSuccessResult<UpdateUserResult>>> UpdateUserAsync(
         UpdateUserRequest request,
@@ -274,7 +311,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("DeleteUser")]
     public async Task<ActionResult<ApiSuccessResult<DeleteUserResult>>> DeleteUserAsync(
     DeleteUserRequest request,
@@ -292,7 +329,7 @@ public class SecurityController : BaseApiController
     }
 
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("UpdatePasswordUser")]
     public async Task<ActionResult<ApiSuccessResult<UpdatePasswordUserResult>>> UpdatePasswordUserAsync(
     UpdatePasswordUserRequest request,
@@ -309,7 +346,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [AllowAnonymous]
+    [Authorize(Roles = "Users")]
     [HttpPost("GetUserRoles")]
     public async Task<ActionResult<ApiSuccessResult<GetUserRolesResult>>> GetUserRolesAsync(GetUserRolesRequest request, CancellationToken cancellationToken)
     {
@@ -323,7 +360,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [AllowAnonymous]
+    [Authorize(Roles = "Users")]
     [HttpPost("UpdateUserRole")]
     public async Task<ActionResult<ApiSuccessResult<UpdateUserRoleResult>>> UpdateUserRoleAsync(UpdateUserRoleRequest request, CancellationToken cancellationToken)
     {
@@ -337,7 +374,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("UpdateMyProfileAvatar")]
     public async Task<ActionResult<ApiSuccessResult<UpdateMyProfileAvatarResult>>> UpdateMyProfileAvatarAsync(UpdateMyProfileAvatarRequest request, CancellationToken cancellationToken)
     {
@@ -352,3 +389,4 @@ public class SecurityController : BaseApiController
     }
 
 }
+

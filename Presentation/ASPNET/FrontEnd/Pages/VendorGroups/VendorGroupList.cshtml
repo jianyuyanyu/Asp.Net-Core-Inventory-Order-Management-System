@@ -1,4 +1,5 @@
 ﻿@page
+@attribute [Authorize(Roles = "VendorGroups")]
 @{
     ViewData["Title"] = "Vendor Group List";
 }

@@ -1,4 +1,5 @@
 ﻿@page
+@attribute [Authorize(Roles = "Dashboards")]
 @{
     ViewData["Title"] = "Default Dashboard";
 }
